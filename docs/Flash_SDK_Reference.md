@@ -31,6 +31,7 @@ Endpoint(
     scaler_value: int = 4,
     template: Optional[PodTemplate] = None,
     min_cuda_version: Optional[CudaVersion | str] = None,
+    max_concurrency: int = 1,
 )
 ```
 
@@ -58,6 +59,7 @@ Endpoint(
 | `scaler_value`         | `int`                                | `4`      | Scaling threshold value.                                                                                                                                         |
 | `template`             | `PodTemplate`                        | `None`   | Pod template overrides (e.g., `PodTemplate(containerDiskInGb=100)`).                                                                                             |
 | `min_cuda_version`     | `str`                                | `None`   | Minimum CUDA version for GPU host selection. GPU endpoints default to `"12.8"` when not set. Has no effect on CPU endpoints.                                     |
+| `max_concurrency`      | `int`                                | `1`      | Max concurrent jobs per worker (QB endpoints only). Values >1 require async handlers for true concurrency. Ignored on LB endpoints.                              |
 
 **Validation rules:**
 
@@ -65,6 +67,7 @@ Endpoint(
 - `id` and `image` are mutually exclusive
 - `name` or `id` is required
 - `workers` rejects negative values and `min > max`
+- `max_concurrency` must be >= 1
 
 ### Usage Patterns
 
