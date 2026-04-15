@@ -102,12 +102,12 @@ class MyModel:
 
 The class is instantiated once per worker (singleton). For single-method classes, input is auto-dispatched to the method. For multi-method classes, include `"method"` in the input payload.
 
-#### Queue-Based (QB) -- concurrent async handler
+#### Queue-Based (QB) -- decorator with max_concurrency
 
 ```python
 @Endpoint(name="batch-inference", gpu=GpuGroup.AMPERE_80, max_concurrency=4)
 async def infer(prompt: str) -> dict:
-    result = await run_model(prompt)
+    result = await run_model(prompt)  # your model inference call
     return {"output": result}
 ```
 
@@ -116,7 +116,7 @@ async def infer(prompt: str) -> dict:
 **Behavior by handler type:**
 
 - **Async handlers** (`async def`): True concurrent execution. Multiple jobs interleave on the event loop. This is the intended usage.
-- **Sync handlers** (`def`): The modifier is injected but the handler runs sequentially within the concurrency window. A warning is logged at build time. Consider making the handler async.
+- **Sync handlers** (`def`): The runtime pulls multiple jobs from the queue, but the sync handler processes them one at a time. A warning is logged at build time. Consider making the handler async.
 
 **Warnings:**
 
