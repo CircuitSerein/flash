@@ -59,7 +59,7 @@ Endpoint(
 | `scaler_value`         | `int`                                | `4`      | Scaling threshold value.                                                                                                                                         |
 | `template`             | `PodTemplate`                        | `None`   | Pod template overrides (e.g., `PodTemplate(containerDiskInGb=100)`).                                                                                             |
 | `min_cuda_version`     | `str`                                | `None`   | Minimum CUDA version for GPU host selection. GPU endpoints default to `"12.8"` when not set. Has no effect on CPU endpoints.                                     |
-| `max_concurrency`      | `int`                                | `1`      | Max concurrent jobs per worker (QB endpoints only). Values >1 require async handlers for true concurrency. Ignored on LB endpoints.                              |
+| `max_concurrency`      | `int`                                | `1`      | Max concurrent jobs per worker (QB endpoints only). Values >1 only achieve true concurrency with async handlers; sync handlers log a build-time warning. Ignored on LB endpoints. |
 
 **Validation rules:**
 
@@ -102,7 +102,7 @@ class MyModel:
 
 The class is instantiated once per worker (singleton). For single-method classes, input is auto-dispatched to the method. For multi-method classes, include `"method"` in the input payload.
 
-#### Queue-Based (QB) -- decorator with max_concurrency
+> **Concurrency:** Use `max_concurrency` to let a single worker handle multiple jobs at once. See the example below.
 
 ```python
 @Endpoint(name="batch-inference", gpu=GpuGroup.AMPERE_80, max_concurrency=4)
@@ -111,7 +111,7 @@ async def infer(prompt: str) -> dict:
     return {"output": result}
 ```
 
-`max_concurrency` controls how many jobs a single worker processes simultaneously. The deployed handler receives a `concurrency_modifier` that tells the Runpod worker runtime to pull multiple jobs from the queue.
+`max_concurrency` controls how many jobs a single worker processes simultaneously. Each worker pulls up to `max_concurrency` jobs from the queue at once.
 
 **Behavior by handler type:**
 
