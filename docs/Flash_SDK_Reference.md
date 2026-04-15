@@ -102,6 +102,28 @@ class MyModel:
 
 The class is instantiated once per worker (singleton). For single-method classes, input is auto-dispatched to the method. For multi-method classes, include `"method"` in the input payload.
 
+#### Queue-Based (QB) -- concurrent async handler
+
+```python
+@Endpoint(name="batch-inference", gpu=GpuGroup.AMPERE_80, max_concurrency=4)
+async def infer(prompt: str) -> dict:
+    result = await run_model(prompt)
+    return {"output": result}
+```
+
+`max_concurrency` controls how many jobs a single worker processes simultaneously. The deployed handler receives a `concurrency_modifier` that tells the Runpod worker runtime to pull multiple jobs from the queue.
+
+**Behavior by handler type:**
+
+- **Async handlers** (`async def`): True concurrent execution. Multiple jobs interleave on the event loop. This is the intended usage.
+- **Sync handlers** (`def`): The modifier is injected but the handler runs sequentially within the concurrency window. A warning is logged at build time. Consider making the handler async.
+
+**Warnings:**
+
+- `max_concurrency > 1` on a sync handler logs a build-time warning
+- `max_concurrency > 100` logs a capacity warning (most GPU workloads saturate well below this)
+- `max_concurrency` on LB endpoints is ignored (FastAPI/uvicorn manages its own concurrency)
+
 #### Load-Balanced (LB) -- instance with route decorators
 
 ```python
